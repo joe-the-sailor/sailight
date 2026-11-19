@@ -1,0 +1,150 @@
+version: '3.8'
+
+services:
+  # PostgreSQL mit PostGIS für GIS-Daten
+  postgres:
+    image: postgis/postgis:15-3.3
+    container_name: sailight_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: sailight
+      POSTGRES_USER: sailight_user
+      POSTGRES_PASSWORD: sailight_pass_2024
+      POSTGRES_HOST_AUTH_METHOD: trust
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/00_init.sql
+      - ./database/schema:/docker-entrypoint-initdb.d/schema
+    ports:
+      - "5432:5432"
+    networks:
+      - sailight_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sailight_user -d sailight"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Redis für Caching und Celery Broker
+  redis:
+    image: redis:7-alpine
+    container_name: sailight_redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - sailight_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # Backend: FastAPI
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: sailight_backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+asyncpg://sailight_user:sailight_pass_2024@postgres:5432/sailight
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: "sailight-secret-key-change-in-production-2024"
+      ALGORITHM: "HS256"
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
+      DEBUG: "True"
+      CORS_ORIGINS: "*"
+    volumes:
+      - ./backend:/app/backend
+      - ./database/migrations:/app/migrations
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - sailight_network
+    command: sh -c "sleep 10 && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+
+  # Frontend: PyQt6 (wird lokal entwickelt, Container optional)
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: sailight_frontend
+    restart: unless-stopped
+    environment:
+      API_URL: http://backend:8000
+      MAP_TILE_URL: https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png
+      GEOPORTAIL_URL: https://map.geoportail.lu/main
+    volumes:
+      - ./frontend:/app/frontend
+    ports:
+      - "5000:5000"
+    depends_on:
+      backend:
+        condition: service_started
+    networks:
+      - sailight_network
+    # Für Entwicklung: Interaktiver Modus
+    stdin_open: true
+    tty: true
+
+  # Celery Worker für Hintergrundaufgaben (z.B. Plan-Generierung)
+  celery:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: sailight_celery
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+asyncpg://sailight_user:sailight_pass_2024@postgres:5432/sailight
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+    volumes:
+      - ./backend:/app/backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_started
+    networks:
+      - sailight_network
+    command: celery -A app.celery_app worker --loglevel=info
+
+  # pgAdmin für Datenbank-Verwaltung (optional)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: sailight_pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@sailight.lu
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    ports:
+      - "5050:80"
+    networks:
+      - sailight_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  redis_data:
+  pgadmin_data:
+
+networks:
+  sailight_network:
+    driver: bridge

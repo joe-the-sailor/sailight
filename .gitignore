@@ -1,0 +1,98 @@
+# =============================================================================
+# SAILIGHT - Git Ignore
+# =============================================================================
+
+# -------------------------------------------
+# Environment & Configuration
+# -------------------------------------------
+.env
+.env.local
+.env.*.local
+.env.development
+.env.test
+.env.production
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# Logs
+*.log
+logs/
+
+# Database
+*.sqlite
+*.db
+*.sqlite3
+
+# Uploads
+uploads/
+
+# Docker
+.docker/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# -------------------------------------------
+# Project Specific
+# -------------------------------------------
+# Local configuration files
+config/local.py
+config/*.local.py
+
+# Database dumps
+database/*.sql
+!database/init.sql
+!database/schema/
+
+# Migration files (keep directory but ignore generated files)
+backend/migrations/versions/
+
+# IDE specific
+.idea/
+.vscode/
+*.sublime-workspace
+*.sublime-project
+
+# Python cache
+__pycache__/

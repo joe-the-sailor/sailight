@@ -1,0 +1,68 @@
+# Dockerfile für Frontend (PyQt6)
+FROM python:3.11-slim
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+ENV DISPLAY=:0
+
+# Install system dependencies for Qt and GUI
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    # Qt6 dependencies
+    libx11-6 \
+    libxext6 \
+    libxcb1 \
+    libxcb-icccm4 \
+    libxcb-image0 \
+    libxcb-keysyms1 \
+    libxcb-render-util0 \
+    libxcb-randr0 \
+    libxcb-shape0 \
+    libxcb-xfixes0 \
+    libxcb-xinerama0 \
+    libxcb-dri3-0 \
+    libxcb-cursor0 \
+    libxkbcommon0 \
+    libxkbcommon-x11-0 \
+    libxrender1 \
+    libxi6 \
+    libgl1 \
+    libglx0 \
+    # Fonts
+    fonts-dejavu \
+    fonts-liberation \
+    # WebEngine dependencies
+    libnss3 \
+    libnspr4 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libdrm2 \
+    libdbus-1-3 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxrandr2 \
+    libgbm1 \
+    libasound2 \
+    libpulse0 \
+    libpangocairo-1.0-0 \
+    libpango-1.0-0 \
+    libharfbuzz0b \
+    # Build tools for PyQt6
+    g++ \
+    make \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Qt6 and PyQt6
+RUN pip install --no-cache-dir PyQt6 PyQt6-WebEngine PyQt6-Charts
+
+# Create app directory
+WORKDIR /app
+
+# Copy frontend code
+COPY frontend/ ./frontend/
+
+# Set default command
+CMD ["python", "frontend/src/main.py"]
