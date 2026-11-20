@@ -39,28 +39,28 @@ class TestAgent:
     
     def print_step(self, step: str):
         """Druckt einen Schritt"""
-        print(f"  📋 {step}...")
+        print(f"  [TEST] {step}...")
     
     def print_success(self, message: str):
         """Druckt eine Erfolgsmeldung"""
-        print(f"  ✅ {message}")
+        print(f"  [OK] {message}")
         self.results["steps"].append({"status": "success", "message": message})
     
     def print_error(self, message: str):
         """Druckt eine Fehlermeldung"""
-        print(f"  ❌ {message}")
+        print(f"  [ERROR] {message}")
         self.results["errors"].append(message)
         self.results["steps"].append({"status": "error", "message": message})
     
     def print_warning(self, message: str):
         """Druckt eine Warnung"""
-        print(f"  ⚠️  {message}")
+        print(f"  [WARN] {message}")
         self.results["warnings"].append(message)
     
     def run_command(self, command: str, cwd: Optional[str] = None, 
-                   check: bool = False, capture: bool = False) -> subprocess.CompletedProcess:
+                   check: bool = False, capture: bool = False, timeout: int = 300) -> subprocess.CompletedProcess:
         """Führt einen Befehl aus"""
-        print(f"  🏃‍♂️  Führe aus: {command}")
+        print(f"  [RUN] Führe aus: {command}")
         try:
             result = subprocess.run(
                 command,
@@ -69,13 +69,13 @@ class TestAgent:
                 check=check,
                 capture_output=capture,
                 text=True,
-                timeout=300
+                timeout=timeout
             )
             if capture and result.stdout:
-                print(f"  📄 Ausgabe:\n{result.stdout}")
+                print(f"  [OUTPUT] {result.stdout}")
             return result
         except subprocess.TimeoutExpired:
-            self.print_error(f"Timeout nach 5 Minuten: {command}")
+            self.print_error(f"Timeout nach {timeout} Sekunden: {command}")
             return subprocess.CompletedProcess(command, 1, "", "Timeout")
         except Exception as e:
             self.print_error(f"Fehler bei '{command}': {e}")
@@ -181,7 +181,7 @@ class TestAgent:
             except Exception:
                 if attempt < max_attempts - 1:
                     time.sleep(delay)
-                    print(f"  ⏳ Versuch {attempt + 1}/{max_attempts}...")
+                    print(f"  [WAIT] Versuch {attempt + 1}/{max_attempts}...")
                 else:
                     self.print_error("Backend hat nicht innerhalb der Wartezeit reagiert")
                     return False
@@ -248,38 +248,38 @@ class TestAgent:
         
         self.print_header("TEST-REPORT")
         
-        print(f"\n📊 ZEIT:")
+        print(f"\n[TIME]")
         print(f"  Start: {time.ctime(self.results['start_time'])}")
         print(f"  Ende:  {time.ctime(self.results['end_time'])}")
         print(f"  Dauer: {duration:.2f} Sekunden ({duration/60:.2f} Minuten)")
         
-        print(f"\n📋 ZUSAMMENFASSUNG:")
-        print(f"  ✅ Erfolge: {len([s for s in self.results['steps'] if s['status'] == 'success'])}")
-        print(f"  ❌ Fehler:   {len(self.results['errors'])}")
-        print(f"  ⚠️  Warnungen: {len(self.results['warnings'])}")
+        print(f"\n[SUMMARY]")
+        print(f"  Erfolge: {len([s for s in self.results['steps'] if s['status'] == 'success'])}")
+        print(f"  Fehler:   {len(self.results['errors'])}")
+        print(f"  Warnungen: {len(self.results['warnings'])}")
         
         if self.results["errors"]:
-            print(f"\n❌ FEHLER:")
+            print(f"\n[ERRORS]")
             for error in self.results["errors"]:
                 print(f"  - {error}")
         
         if self.results["warnings"]:
-            print(f"\n⚠️  WARNUNGEN:")
+            print(f"\n[WARNINGS]")
             for warning in self.results["warnings"]:
                 print(f"  - {warning}")
         
         self.results["success"] = len(self.results["errors"]) == 0
         
         if self.results["success"]:
-            print(f"\n🎉 ALLGEMEINER STATUS: ✅ ERFOLGREICH")
+            print(f"\n[STATUS] SUCCESS")
         else:
-            print(f"\n💥 ALLGEMEINER STATUS: ❌ FEHLGESCHLAGEN")
+            print(f"\n[STATUS] FAILED")
         
         return self.results
     
     def run_full_test(self):
         """Führt den kompletten Test durch"""
-        self.print_header("🎯 SAILIGHT TEST-AGENT GESTARTET")
+        self.print_header("SAILIGHT TEST-AGENT GESTARTET")
         
         # 1. Docker prüfen
         if not self.check_docker():
@@ -330,16 +330,11 @@ class TestAgent:
 
 if __name__ == "__main__":
     print("""
-    ███████╗██╗██████╗ ██╗     ██╗██╗   ██╗██╗███████╗
-    ██╔════╝██║██╔══██╗██║     ██║██║   ██║██║██╔════╝
-    █████╗  ██║██████╔╝██║     ██║██║   ██║██║█████╗  
-    ██╔══╝  ██║██╔══██╗██║     ██║╚██╗ ██╔╝██║██╔══╝  
-    ██║     ██║██║  ██║███████╗██║ ╚████╔╝ ██║███████╗
-    ╚═╝     ╚═╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═══╝  ╚═╝╚══════╝
-    
-    🎯 Sailight Test-Agent v1.0
-    ==========================
+    ============================================================
+    SAILIGHT TEST-AGENT v1.0
+    ============================================================
     Automatisierter Test für Docker-Setup und API
+    ============================================================
     """)
     
     agent = TestAgent()
