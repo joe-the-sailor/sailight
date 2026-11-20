@@ -60,7 +60,6 @@ services:
       CORS_ORIGINS: "*"
     volumes:
       - ./backend:/app/backend
-      - ./database/migrations:/app/migrations
     ports:
       - "8000:8000"
     depends_on:
