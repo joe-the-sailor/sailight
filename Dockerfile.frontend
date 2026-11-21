@@ -59,7 +59,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 # Install Qt6 and PyQt6
-RUN pip install --no-cache-dir PyQt6 PyQt6-WebEngine PyQt6-Charts
+RUN pip install --no-cache-dir PyQt6==6.6.0 PyQt6-WebEngine==6.6.0 PyQt6-Charts==6.6.0
 
 # Install frontend Python dependencies
 COPY frontend/requirements.txt .
