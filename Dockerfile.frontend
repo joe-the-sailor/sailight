@@ -61,6 +61,9 @@ RUN pip install --no-cache-dir PyQt6 PyQt6-WebEngine PyQt6-Charts
 # Create app directory
 WORKDIR /app
 
+# Set PYTHONPATH so Python can find the frontend module
+ENV PYTHONPATH=/app
+
 # Copy frontend code
 COPY frontend/ ./frontend/
 
