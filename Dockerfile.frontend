@@ -55,11 +55,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
+# Create app directory
+WORKDIR /app
+
 # Install Qt6 and PyQt6
 RUN pip install --no-cache-dir PyQt6 PyQt6-WebEngine PyQt6-Charts
 
-# Create app directory
-WORKDIR /app
+# Install frontend Python dependencies
+COPY frontend/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Set PYTHONPATH so Python can find the frontend module
 ENV PYTHONPATH=/app
